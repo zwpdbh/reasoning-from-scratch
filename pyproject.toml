@@ -72,7 +72,9 @@ where = ["."]
 include = ["reasoning_from_scratch", "reasoning_from_scratch.*"]
 
 [tool.uv]
-exclude-newer = "7 days"  # Requires a newer uv; run `uv self update` if this fails to parse
+# exclude-newer disabled: the TUNA PyPI mirror does not provide upload-time
+# metadata, so any date-based filtering excludes all packages.
+# exclude-newer = "7 days"  # Requires a newer uv; run `uv self update` if this fails to parse
 
 [tool.uv.sources]
 reasoning = { workspace = true }
