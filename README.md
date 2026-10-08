@@ -43,6 +43,77 @@ git clone --depth 1 https://github.com/rasbt/reasoning-from-scratch.git
 <br>
 <br>
 
+## Local Setup Notes (this fork) — Notebook Dev Experience
+
+This fork uses [uv](https://docs.astral.sh/uv/) and targets **Python 3.13**.
+(3.14 currently breaks kernel-side tab completion: IPython → jedi → parso has
+no 3.14 grammar yet; 3.13 also keeps the Appendix G `chainlit` extra working.)
+
+```bash
+uv sync          # creates .venv, installs all deps incl. dev tools
+```
+
+### Start JupyterLab
+
+```bash
+uv run jupyter lab
+```
+
+Launching via `uv run` means Jupyter runs *inside* the project venv, so the
+default notebook kernel automatically has torch, transformers, etc.
+
+### Editor features (autocomplete, hover docs, diagnostics)
+
+The dev dependency group already includes `jupyterlab-lsp` + `pyright`, which
+give VS Code-style static completions and diagnostics inside notebooks. One
+manual step is required after every `.venv` rebuild: jupyter-lsp only detects
+pyright in the npm `node_modules` layout, so we symlink the pip-installed one:
+
+```bash
+mkdir -p .venv/node_modules
+ln -sfn ../lib/python3.13/site-packages/pyright/dist .venv/node_modules/pyright
+```
+
+After restarting `uv run jupyter lab`, pyright should be absent from the
+"Skipped non-installed server(s)" log line.
+
+User-level JupyterLab settings (apply to all projects on this machine):
+
+- `~/.jupyter/lab/user-settings/@jupyterlab/completer-extension/manager.jupyterlab-settings`
+  → `{ "autoCompletion": true }` — completions pop up as you type
+- `~/.jupyter/lab/user-settings/@jupyterlab/codemirror-extension/plugin.jupyterlab-settings`
+  → `{ "defaultConfig": { "autoClosingBrackets": true, "matchBrackets": true } }`
+  — auto-close `()`, `[]`, `{}`, quotes; highlight matching pairs
+
+(GUI equivalents: Settings → Settings Editor → Code Completion / CodeMirror.)
+
+### VS Code notebooks (optional)
+
+Register the venv as a named kernel, then pick it in VS Code's kernel picker
+instead of letting VS Code install ipykernel into the system Python:
+
+```bash
+uv run python -m ipykernel install --user --name reasoning-from-scratch \
+    --display-name "Python 3.13 (reasoning-from-scratch .venv)"
+```
+
+### Gotchas (this machine)
+
+- The default package index is the Tsinghua TUNA mirror
+  (`~/.config/uv/uv.toml`), which does not serve upload-time metadata —
+  do **not** enable `exclude-newer` in `[tool.uv]`, or resolution fails.
+- Model/dataset downloads from huggingface.co can be slow; use
+  `https://hf-mirror.com/<org>/<repo>/resolve/main/<file>` with the proxy
+  bypassed (`curl --noproxy '*'`), e.g. the chapter weights live under
+  `rasbt/qwen3-from-scratch`.
+- If locked dependency versions look mysteriously old after editing deps:
+  `uv lock --upgrade-package <name> && uv sync` — `uv sync` alone reuses
+  locked versions even after the original constraint is gone.
+
+<br>
+<br>
+
+
 ## Table of Contents
 
 [![Code tests Linux](https://github.com/rasbt/reasoning-from-scratch/actions/workflows/tests-linux.yml/badge.svg)](https://github.com/rasbt/reasoning-from-scratch/actions/workflows/tests-linux.yml)
